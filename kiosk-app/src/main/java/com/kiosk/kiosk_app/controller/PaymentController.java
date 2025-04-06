@@ -3,6 +3,8 @@ package com.kiosk.kiosk_app.controller;
 import com.kiosk.kiosk_app.domain.PaymentHistory;
 
 import com.kiosk.kiosk_app.repository.PaymentHistoryRepository;
+import com.kiosk.kiosk_app.service.OrderService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -31,6 +33,8 @@ public class PaymentController {
     // JPA 리포지토리 의존성 주입
     @Autowired
     private PaymentHistoryRepository paymentHistoryRepository;
+    @Autowired
+    private OrderService orderService;
 
     /**
      * 1단계 - 결제 준비 요청
@@ -136,6 +140,9 @@ public class PaymentController {
                 .build();
 
         paymentHistoryRepository.save(history);
+
+        // ✅ ✅ 결제 승인 성공 후, 주방에 주문 알림 전송!
+        orderService.notifyKitchen(orderService.getOrderEntity(orderId)); // ← 이 줄 추가
 
         return ResponseEntity.ok(response.getBody());
     }

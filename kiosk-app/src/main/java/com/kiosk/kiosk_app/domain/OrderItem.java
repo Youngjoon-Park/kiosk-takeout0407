@@ -1,5 +1,7 @@
 package com.kiosk.kiosk_app.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,6 +27,7 @@ public class OrderItem {
     private Menu menu;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")  // 외래키 컬럼명
+    @JoinColumn(name = "order_id") // 외래키 컬럼명
+    @JsonIgnore // 🔥 여기에 꼭 추가
     private Order order;
 }

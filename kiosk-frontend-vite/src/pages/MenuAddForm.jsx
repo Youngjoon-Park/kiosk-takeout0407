@@ -21,11 +21,7 @@ const MenuAddForm = () => {
         description,
       });
       alert("메뉴가 등록되었습니다!");
-      // 초기화
-      setName("");
-      setPrice("");
-      setDescription("");
-      navigate("/menu-test"); // ✅ 꼭 이 줄 추가!
+      navigate("/menu-test"); // ✅ 메뉴 목록으로 이동
     } catch (error) {
       console.error("메뉴 추가 실패:", error);
       alert("등록 실패!");

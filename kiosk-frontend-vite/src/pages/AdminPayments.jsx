@@ -8,7 +8,7 @@ const AdminPayments = () => {
   useEffect(() => {
     const fetchPayments = async () => {
       try {
-        const data = await getAllPayments();
+        const data = await getAllPayments();  // getAllPayments 함수 호출
         setPayments(data);
       } catch (error) {
         alert("❌ 결제 내역 불러오기 실패");

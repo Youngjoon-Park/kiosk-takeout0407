@@ -23,13 +23,13 @@ public class Order {
     private LocalDateTime createdAt; // 주문 생성 시간
 
     @Column(name = "total_price")
-    private Integer totalPrice; // 총 금액 (변경: int -> Integer)
+    private Integer totalPrice; // 총 금액
 
     @Column(name = "total_amount") // 총 수량
-    private int totalAmount; // 총 수량 추가
+    private int totalAmount;
 
-    @Enumerated(EnumType.STRING)
-    private OrderStatus status;
+    @Column(name = "status")
+    private String status; // 상태를 String으로 변경
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     @Builder.Default
@@ -42,13 +42,20 @@ public class Order {
                 .sum(); // 각 OrderItem의 수량 합계
     }
 
-    // 추가된 부분: setter 메서드 (총 수량 설정)
-    public void setTotalAmount(int totalAmount) {
-        this.totalAmount = totalAmount;
-    }
-
+    // PrePersist를 사용하여 새로운 주문이 생성될 때 createdAt과 status를 설정
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = "PENDING"; // 상태가 null일 경우 기본값으로 PENDING 설정
+        }
+
+        // totalAmount를 계산하여 저장
+        this.totalAmount = getTotalAmount();
+
+        // totalPrice를 계산하여 저장 (가격 합계 계산 필요)
+        this.totalPrice = items.stream()
+                .mapToInt(item -> item.getQuantity() * item.getPrice()) // 가격 * 수량 합계
+                .sum();
     }
 }

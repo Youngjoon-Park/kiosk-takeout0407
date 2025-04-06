@@ -17,7 +17,7 @@ public class AdminMenuService {
     private final MenuRepository menuRepository;
 
     public List<MenuResponse> getAllMenus() {
-        return menuRepository.findAll().stream()
+        return menuRepository.findByEnabledTrue().stream()
                 .map(MenuResponse::from)
                 .collect(Collectors.toList());
     }
@@ -46,4 +46,12 @@ public class AdminMenuService {
         menu.setDescription(request.getDescription());
         menuRepository.save(menu);
     }
+
+    public void deleteMenu(Long id) {
+        Menu menu = menuRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("메뉴를 찾을 수 없습니다."));
+        menu.setEnabled(false); // ✅ 실제 삭제 대신 숨김 처리 (soft delete)
+        menuRepository.save(menu);
+    }
+
 }

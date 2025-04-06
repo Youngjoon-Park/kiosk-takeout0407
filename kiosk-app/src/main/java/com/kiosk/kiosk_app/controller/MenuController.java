@@ -2,38 +2,34 @@ package com.kiosk.kiosk_app.controller;
 
 import com.kiosk.kiosk_app.domain.Menu;
 import com.kiosk.kiosk_app.repository.MenuRepository;
-import org.springframework.http.ResponseEntity;
+
+import jakarta.annotation.PostConstruct;
+
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @CrossOrigin(origins = "http://localhost:5173")
 @RestController
-@RequestMapping("/menu")
+@RequestMapping("/api/menus") // ✅ 사용자 전용 경로
 public class MenuController {
 
     private final MenuRepository menuRepository;
 
     public MenuController(MenuRepository menuRepository) {
         this.menuRepository = menuRepository;
-    }
-
-    @PostMapping
-    public Menu create(@RequestBody Menu menu) {
-        return menuRepository.save(menu);
+        System.out.println("✅ MenuController 생성됨!"); // 여기에 로그
     }
 
     @GetMapping
     public List<Menu> list() {
-        return menuRepository.findAll(); // 👈 enabled 없이 전체 조회
+        System.out.println("🔥 /api/menus 요청 도착!");
+        return menuRepository.findByEnabledTrue(); // 사용자용: 활성 메뉴만
     }
 
-    @DeleteMapping("/menus/{id}")
-    public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
-        if (!menuRepository.existsById(id)) {
-            return ResponseEntity.notFound().build();
-        }
-        menuRepository.deleteById(id);
-        return ResponseEntity.ok().build();
+    @PostConstruct
+    public void init() {
+        System.out.println("✅ MenuController 로딩됨");
     }
+
 }

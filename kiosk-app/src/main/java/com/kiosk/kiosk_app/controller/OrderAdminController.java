@@ -1,6 +1,5 @@
 package com.kiosk.kiosk_app.controller;
 
-import com.kiosk.kiosk_app.domain.OrderStatus;
 import com.kiosk.kiosk_app.dto.OrderDetailResponse;
 import com.kiosk.kiosk_app.dto.OrderDto;
 import com.kiosk.kiosk_app.service.OrderService;
@@ -33,8 +32,10 @@ public class OrderAdminController {
     @PatchMapping("/orders/{orderId}/status")
     public ResponseEntity<Void> updateOrderStatus(
             @PathVariable Long orderId,
-            @RequestParam OrderStatus status) {
-        orderService.updateOrderStatus(orderId, status);
+            @RequestBody String status) { // status를 String으로 받음
+        // 상태값을 그대로 사용하고 상태 업데이트
+        orderService.updateOrderStatus(orderId, status); // String을 그대로 사용
         return ResponseEntity.ok().build();
     }
+
 }

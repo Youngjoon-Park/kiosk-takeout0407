@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/admin/menus")
+@RequestMapping("/api/admin/menus") // 유지
 @RequiredArgsConstructor
 public class AdminMenuController {
 
@@ -31,6 +31,12 @@ public class AdminMenuController {
     public ResponseEntity<Void> addMenu(@RequestBody MenuRequest request) {
         adminMenuService.addMenu(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteMenu(@PathVariable Long id) {
+        adminMenuService.deleteMenu(id);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{id}")

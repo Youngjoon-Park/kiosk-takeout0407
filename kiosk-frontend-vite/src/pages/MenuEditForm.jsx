@@ -7,18 +7,23 @@ const MenuEditForm = () => {
   const navigate = useNavigate();
   const [menu, setMenu] = useState({
     name: "",
-    price: "",
+    price: 0,
     description: "",
   });
 
   useEffect(() => {
     const fetchMenu = async () => {
-      const data = await getMenuById(id);
-      setMenu({
-        name: data.name,
-        price: data.price,
-        description: data.description,
-      });
+      try {
+        const data = await getMenuById(id);
+        setMenu({
+          name: data.name,
+          price: data.price,
+          description: data.description,
+        });
+      } catch (error) {
+        console.error("메뉴 정보 불러오기 실패:", error);
+        alert("메뉴 정보를 불러오지 못했습니다.");
+      }
     };
     fetchMenu();
   }, [id]);
@@ -27,7 +32,7 @@ const MenuEditForm = () => {
     const { name, value } = e.target;
     setMenu((prev) => ({
       ...prev,
-      [name]: name === "price" ? parseInt(value) || "" : value,
+      [name]: name === "price" ? parseInt(value) || 0 : value,
     }));
   };
 

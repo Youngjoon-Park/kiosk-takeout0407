@@ -3,11 +3,13 @@ package com.kiosk.kiosk_app.controller;
 import com.kiosk.kiosk_app.domain.Order;
 import com.kiosk.kiosk_app.domain.Menu;
 import com.kiosk.kiosk_app.domain.OrderItem;
-import com.kiosk.kiosk_app.domain.OrderStatus;
+
 import com.kiosk.kiosk_app.dto.*;
 import com.kiosk.kiosk_app.repository.MenuRepository;
 import com.kiosk.kiosk_app.repository.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,13 +29,16 @@ public class OrderController {
         @Autowired
         private MenuRepository menuRepository;
 
+        @Autowired
+        private SimpMessagingTemplate messagingTemplate;
+
         // 주문 생성
         @PostMapping
         @Transactional
         public OrderResponse createOrder(@RequestBody OrderRequest request) {
                 Order order = new Order();
                 order.setCreatedAt(LocalDateTime.now()); // 주문 시간
-                order.setStatus(OrderStatus.PENDING); // 초기 상태
+                order.setStatus("PENDING"); // 상태를 문자열로 설정
 
                 List<OrderItem> orderItems = new ArrayList<>();
                 int totalPrice = 0;
@@ -70,32 +75,29 @@ public class OrderController {
                                                 orderItem.getPrice()))
                                 .collect(Collectors.toList());
 
-                // OrderResponse 반환 시 items를 포함하여 반환
+                messagingTemplate.convertAndSend("/topic/orders",
+                                new OrderResponse(order.getId(), totalPrice, order.getStatus(), itemDtos));
+
                 return new OrderResponse(order.getId(), totalPrice, order.getStatus(), itemDtos);
         }
 
         // 주문 목록 조회
         @GetMapping
-        public List<OrderResponse> getOrders(@RequestParam(required = false) OrderStatus status) {
+        public List<OrderResponse> getOrders(@RequestParam(required = false) String status) {
                 List<Order> orders;
 
-                // 상태가 주어지면 해당 상태에 맞는 주문만 반환
                 if (status != null) {
                         orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
                 } else {
-                        // 상태가 주어지지 않으면 모든 주문을 반환
                         orders = orderRepository.findAllByOrderByCreatedAtDesc();
                 }
 
-                // orders가 null일 경우 빈 배열로 처리
                 if (orders == null) {
                         orders = new ArrayList<>();
                 }
 
-                // orders에 대한 items 목록을 포함하여 반환
                 return orders.stream()
                                 .map(order -> {
-                                        // items 목록을 채워서 반환
                                         List<OrderResponse.ItemDto> itemDtos = order.getItems().stream()
                                                         .map(orderItem -> new OrderResponse.ItemDto(
                                                                         orderItem.getMenu().getName(),
@@ -127,14 +129,19 @@ public class OrderController {
 
         // 주문 상태 업데이트
         @PatchMapping("/{orderId}/status")
-        public OrderResponse updateOrderStatus(@PathVariable Long orderId, @RequestParam OrderStatus status) {
-                Order order = orderRepository.findById(orderId)
-                                .orElseThrow(() -> new IllegalArgumentException("해당 주문 없음"));
+        public OrderResponse updateOrderStatus(@PathVariable Long orderId,
+                        @RequestBody OrderStatusUpdateRequest request) {
+                String status = request.getStatus(); // 상태를 문자열로 받음
+                System.out.println("📦 받은 상태값: " + status);
 
+                Order order = orderRepository.findById(orderId)
+                                .orElseThrow(() -> new IllegalArgumentException("해당 주문이 존재하지 않습니다."));
+
+                // 상태를 String으로 처리
                 order.setStatus(status);
+
                 orderRepository.save(order);
 
-                // items 목록을 채워서 반환
                 List<OrderResponse.ItemDto> itemDtos = order.getItems().stream()
                                 .map(orderItem -> new OrderResponse.ItemDto(
                                                 orderItem.getMenu().getName(),
