@@ -218,39 +218,84 @@ README-업데이트-0407.md (최종 교육/실습 버전)
 npm install tailwindcss@3.3.5 postcss@8.4.21 autoprefixer@10.4.13
 설정 파일 수동 생성 후 Tailwind CSS 정상 적용됨
 
-4️⃣ [테스트] NFC 결제 흐름 테스트용 orderId = 1 데이터 사용
-NFC 결제 흐름을 점검하기 위해 테스트용 주문을 임의로 생성
+## 🧾 Kiosk 키오스크 프로젝트 - 주문(Order) 모듈 정리
 
-프론트에서 orderId = 1로 가정하고 NFC 결제 완료 API 호출
-
-백엔드 API:
-
-http
-
-POST /api/payments/nfc
-Body:
-{
-  "orderId": 1,
-  "amount": 9500
-}
-결과: paid = true, paidAt 저장, 키친 화면 WebSocket 전송 완료됨
-
-
-항목	설명
-DTO 누락 → 해결	takeOut, paid 필드 추가
-WebSocket 반영	DTO 기준 메시지로 변경 후 정상 출력
-Tailwind 오류 해결	수동 설정 + 버전 다운그레이드
-테스트 데이터	orderId = 1로 NFC 결제 흐름 검증
-교육 구성	버튼 클릭 방식 vs Postman 방식 비교 설명-
-
-### ✅ 저장 및 커밋 방법
-
-```bash
-git add README-업데이트-0407.md
-git commit -m "추가: 테스트 orderId=1, 교육용 NFC 버튼 + Postman 비교 포함"
-git push
-
+### ✅ 1. 교육용 테스트 버튼(TestOrderButton)
+- 위치: `src/components/TestOrderButton.jsx`
+- 목적: 메뉴 선택 없이 주문 요청 테스트 가능
+- 특징:
+  - `포장 주문 보내기` / `매장 주문 보내기` 버튼 존재
+  - 메뉴 ID와 수량은 하드코딩 (예: menuId 1, 2번)
+  - 실제 결제 X, 주문 생성만 테스트
+- 사용 예:
+  ```js
+  await axios.post('http://localhost:8081/order', {
+    items: [
+      { menuId: 1, quantity: 1 },
+      { menuId: 2, quantity: 2 },
+    ],
+    takeOut: true,
+  });
+  ```
 
 ---
 
-> "실무에서 겪은 시행착오와 실전형 요구사항을 바탕으로, 빠르게 현장에 도입할 수 있는 키오스크 시스템을 목표로 구축했습니다."
+### ✅ 2. 실제 주문 흐름
+
+1. `/` → StartPage: 포장 / 매장 선택 (세션 + state 저장)
+2. `/main` → App.jsx:
+   - 메뉴 리스트, 장바구니, 주문 형태 안내
+   - `isTakeOut` 값 전달됨
+3. 결제 클릭 → CartPage.jsx
+   - 주문 생성 API 요청 (`/api/orders`)
+   - orderId 받아서 `/payment/:orderId`로 이동
+
+---
+
+### ✅ 3. 주요 수정 및 에러 해결 내역 (2024.04.08)
+
+#### 🛠️ 1) 주문 생성 시 takeOut 값 누락
+- 원인: DTO 또는 프론트에서 전달되지 않음
+- 해결:
+  - `CartPage`, `Cart`, `TestOrderButton` 모두에 `takeOut` 포함
+  - 백엔드에서 `request.getTakeOut()`으로 처리
+
+#### 🛠️ 2) WebSocket 메시지에 주문형태 미포함
+- 원인: `OrderDto`에 takeOut 없음
+- 해결:
+  - `OrderDto`에 Boolean `takeOut` 필드 추가
+  - `fromEntity()`에서 `order.getTakeOut()` 반영
+
+#### 🛠️ 3) KitchenView에서 주문번호 미출력
+- 원인: `order.id`가 undefined
+- 해결:
+  - WebSocket 메시지에서 `order.id` 대신 `order.orderId`로 보냄
+  - 프론트 코드 수정: `{order.orderId}`로 변경
+
+#### 🛠️ 4) OrderItem 테이블 2개 생성
+- 원인: JPA에서 `@Table(name = "order_items")` 명시 안 하면 기본으로 `order_item` 생성
+- 해결:
+  - `OrderItem` 클래스에 `@Table(name = "order_items")` 명시 → 중복 제거
+
+---
+
+### ✅ 4. DTO 정리
+| 용도 | 클래스명 | 비고 |
+|------|----------|------|
+| API 응답용 | `OrderResponse` | 주문 생성 후 응답 |
+| WebSocket 전송용 | `OrderDto` | 주방 화면 실시간 알림 |
+| 관리자 상세 조회 | `OrderDetailResponse` | 관리자 주문 상세 화면 |
+
+---
+
+### ✅ 5. 오늘 배운 키포인트 요약
+- `takeOut`은 Boolean이지만 null 처리 주의 (기본 true 등)
+- WebSocket 전송용 DTO에 필요한 필드 추가 안 하면 화면에 안 나옴
+- 실제 결제는 주문 생성 후 orderId를 통해 이동해야 정확
+- 프론트는 state와 sessionStorage 양쪽 모두 사용 가능
+- 테스트 버튼은 실제 기능 구현 전에 흐름 점검용으로 매우 유용
+
+---
+
+> 다음 단계: 바코드 스캐너 연동 테스트 준비 (Node.js + SerialPort)
+
