@@ -271,6 +271,35 @@ npm install tailwindcss@3.3.5 postcss@8.4.21 autoprefixer@10.4.13
 - 해결:
   - WebSocket 메시지에서 `order.id` 대신 `order.orderId`로 보냄
   - 프론트 코드 수정: `{order.orderId}`로 변경
+  - ✅ 정리: orderId → id 로 바꾼 작업 내역
+1️⃣ 기존에는 WebSocket으로 OrderResponse 사용
+이 경우 orderId 필드명을 사용하고 있었음
+
+json
+{
+  "orderId": 15,
+  "takeOut": true,
+  ...
+}
+2️⃣ WebSocket용 별도 DTO로 OrderDto 생성 및 사용
+백엔드 OrderService.java의 notifyKitchen()에서 변경:
+
+OrderDto dto = OrderDto.fromEntity(order); // ✅ 여기서 id로 생성됨
+messagingTemplate.convertAndSend("/topic/new-orders", dto);
+OrderDto.java 안에서는 이렇게 id로 정의되어 있음:
+
+@Data
+public class OrderDto {
+    private Long id; // ✅ orderId가 아닌 id!
+🔄 그 후 프론트에서 수정한 부분 (KitchenView.jsx)
+
+<strong>주문번호:</strong> {order.id} // ✅ 이제 이게 맞음
+💡 요약
+구분	필드명	사용 위치
+API 응답용 OrderResponse	orderId	/order, /orders 같은 REST API 응답
+WebSocket 전송용 OrderDto	id	KitchenView.jsx에서 실시간 표시용
+✅ 그래서 지금은 KitchenView에서 {order.id} 사용이 맞고,
+DTO 분리한 이유는 "API 응답용 vs 실시간 알림용" 역할을 나누기 위함이에요.
 
 #### 🛠️ 4) OrderItem 테이블 2개 생성
 - 원인: JPA에서 `@Table(name = "order_items")` 명시 안 하면 기본으로 `order_item` 생성
