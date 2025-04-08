@@ -187,10 +187,69 @@ npm run dev
 
 ---
 
-## 👨‍💻 개발자 정보
+README-업데이트-0407.md (최종 교육/실습 버전)
 
-- **Youngjoon Park**
-- GitHub: [https://github.com/Youngjoon-Park](https://github.com/Youngjoon-Park)
+# ✅ kiosk-takeout0407 – 2025.04.07 작업 정리 (실제 반영된 사항 위주)
+
+---
+
+## 1️⃣ [기능 개선] 포장/매장 구분 (`takeOut`) WebSocket 및 키친 화면 연동
+
+- 주문 생성 시 `takeOut = true/false` 값 포함
+- WebSocket 메시지에 포함되도록 DTO 수정
+- 키친 화면에서 매장/포장 구분 아이콘으로 렌더링됨
+- `takeOut` 누락 시 키친에서 주문이 안 뜨는 문제 발생 → DTO 필드 추가로 해결
+
+---
+
+## 2️⃣ [이슈 해결] WebSocket 메시지 누락 문제 (두 번째 주문부터 안 나옴)
+
+- DTO(`OrderDetailResponse`)에 `takeOut`, `paid` 필드 누락으로 메시지 불완전
+- WebSocket 전송 시 DTO 기준으로 메시지 구성
+- 키친 화면에서 정상 출력됨
+
+---
+
+## 3️⃣ [이슈 해결] Tailwind CSS 적용 오류 → 버전 다운그레이드로 해결
+
+- 자동 설정 실패 (`tailwind.config.js`, `postcss.config.js` 생성 안됨)
+- 다음 명령어로 버전 수동 지정 및 설치:
+
+npm install tailwindcss@3.3.5 postcss@8.4.21 autoprefixer@10.4.13
+설정 파일 수동 생성 후 Tailwind CSS 정상 적용됨
+
+4️⃣ [테스트] NFC 결제 흐름 테스트용 orderId = 1 데이터 사용
+NFC 결제 흐름을 점검하기 위해 테스트용 주문을 임의로 생성
+
+프론트에서 orderId = 1로 가정하고 NFC 결제 완료 API 호출
+
+백엔드 API:
+
+http
+
+POST /api/payments/nfc
+Body:
+{
+  "orderId": 1,
+  "amount": 9500
+}
+결과: paid = true, paidAt 저장, 키친 화면 WebSocket 전송 완료됨
+
+
+항목	설명
+DTO 누락 → 해결	takeOut, paid 필드 추가
+WebSocket 반영	DTO 기준 메시지로 변경 후 정상 출력
+Tailwind 오류 해결	수동 설정 + 버전 다운그레이드
+테스트 데이터	orderId = 1로 NFC 결제 흐름 검증
+교육 구성	버튼 클릭 방식 vs Postman 방식 비교 설명-
+
+### ✅ 저장 및 커밋 방법
+
+```bash
+git add README-업데이트-0407.md
+git commit -m "추가: 테스트 orderId=1, 교육용 NFC 버튼 + Postman 비교 포함"
+git push
+
 
 ---
 
